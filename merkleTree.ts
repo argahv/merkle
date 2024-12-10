@@ -1,4 +1,5 @@
-import crypto from "crypto";
+import { MerkleTree } from "merkletreejs";
+import keccak256 from "keccak256";
 
 export interface BeneficiaryLeaf {
   beneficiaryID: string;
@@ -8,76 +9,35 @@ export interface BeneficiaryLeaf {
   metadata: string; // e.g., last disbursement timestamp
 }
 
-export class MerkleTree {
-  private leaves: string[];
-  private tree: string[][];
+export class MerkleTreeHandler {
+  private tree: MerkleTree;
 
   constructor(private beneficiaries: BeneficiaryLeaf[]) {
-    this.leaves = this.beneficiaries.map((b) => this.hashLeaf(b));
-    this.tree = this.buildTree(this.leaves);
+    const leaves = this.beneficiaries.map((b) => this.hashLeaf(b));
+    this.tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
   }
 
-  private hashLeaf(leaf: BeneficiaryLeaf): string {
-    const {
-      beneficiaryID,
-      totalAllocation,
-      remainingBalance,
-      disbursementStage,
-      metadata,
-    } = leaf;
-    return crypto
-      .createHash("sha256")
-      .update(
-        `${beneficiaryID}${totalAllocation}${remainingBalance}${disbursementStage}${metadata}`
-      )
-      .digest("hex");
-  }
-
-  private buildTree(leaves: string[]): string[][] {
-    let layers = [leaves];
-    while (layers[layers.length - 1].length > 1) {
-      const prevLayer = layers[layers.length - 1];
-      const newLayer = [];
-      for (let i = 0; i < prevLayer.length; i += 2) {
-        const left = prevLayer[i];
-        const right = prevLayer[i + 1] || left; // Duplicate the last node if odd
-        newLayer.push(this.hashPair(left, right));
-      }
-      layers.push(newLayer);
-    }
-    return layers;
-  }
-
-  private hashPair(left: string, right: string): string {
-    return crypto
-      .createHash("sha256")
-      .update(left + right)
-      .digest("hex");
+  private hashLeaf(leaf: BeneficiaryLeaf): Buffer {
+    const leafData = `${leaf.beneficiaryID}${leaf.totalAllocation}${leaf.remainingBalance}${leaf.disbursementStage}${leaf.metadata}`;
+    return keccak256(leafData);
   }
 
   public getRoot(): string {
-    return this.tree[this.tree.length - 1][0];
+    return this.tree.getHexRoot();
   }
 
-  public updateLeaf(index: number, updatedLeaf: BeneficiaryLeaf): void {
-    this.leaves[index] = this.hashLeaf(updatedLeaf);
-    this.tree = this.buildTree(this.leaves);
+  public getProof(leaf: BeneficiaryLeaf): string[] {
+    const hashedLeaf = this.hashLeaf(leaf);
+    return this.tree.getHexProof(hashedLeaf);
   }
 
-  public getProof(index: number): string[] {
-    let proof: string[] = [];
-    let currentLayer = this.leaves;
-    while (currentLayer.length > 1) {
-      const isRightNode = index % 2 === 1;
-      const pairIndex = isRightNode ? index - 1 : index + 1;
+  public updateBeneficiaries(newBeneficiaries: BeneficiaryLeaf[]) {
+    this.beneficiaries = newBeneficiaries;
+    const leaves = this.beneficiaries.map((b) => this.hashLeaf(b));
+    this.tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+  }
 
-      if (pairIndex < currentLayer.length) {
-        proof.push(currentLayer[pairIndex]);
-      }
-
-      index = Math.floor(index / 2);
-      currentLayer = this.tree[this.tree.indexOf(currentLayer) + 1];
-    }
-    return proof;
+  public getLeaves() {
+    return this.tree.toString();
   }
 }

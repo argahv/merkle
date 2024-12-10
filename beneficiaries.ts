@@ -1,4 +1,4 @@
-import { BeneficiaryLeaf, MerkleTree } from "./merkleTree";
+import { BeneficiaryLeaf, MerkleTreeHandler } from "./merkleTree";
 import chalk from "chalk";
 
 let beneficiaries: BeneficiaryLeaf[] = [
@@ -39,11 +39,11 @@ let beneficiaries: BeneficiaryLeaf[] = [
   },
 ];
 
-export const merkleTree = new MerkleTree(beneficiaries);
+export const merkleTreeHandler = new MerkleTreeHandler(beneficiaries);
 
 export function disburseTokens(): void {
   console.log(chalk.blue("Disbursement triggered."));
-  beneficiaries = beneficiaries.map((b, index) => {
+  beneficiaries = beneficiaries.map((b) => {
     if (b.remainingBalance > 0) {
       const updatedBalance = b.remainingBalance - 1;
       const updatedStage = b.disbursementStage + 1;
@@ -53,12 +53,6 @@ export function disburseTokens(): void {
         disbursementStage: updatedStage,
         metadata: new Date().toISOString(),
       };
-      merkleTree.updateLeaf(index, updatedLeaf);
-      console.log(
-        chalk.greenBright(
-          `Updated Leaf: ${JSON.stringify(updatedLeaf, null, 2)}`
-        )
-      );
       console.log(
         chalk.green(
           `Disbursed 1 token to Beneficiary ${b.beneficiaryID}. Remaining Balance: ${updatedBalance}`
@@ -72,4 +66,10 @@ export function disburseTokens(): void {
       return b;
     }
   });
+  merkleTreeHandler.updateBeneficiaries(beneficiaries);
+  console.log("Tree:", merkleTreeHandler.getLeaves());
+
+  console.log(
+    chalk.cyanBright(`Updated Merkle Root: ${merkleTreeHandler.getRoot()}`)
+  );
 }
