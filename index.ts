@@ -45,4 +45,5 @@ async function triggerDisbursement() {
 }
 
 //In the real world scnario, this will be triggered by some trigger mechanism; might be like water level in case of anticipation of flood
-setInterval(triggerDisbursement, 5 * 1000);
+console.log("Disbursement process will be triggered every 15 seconds");
+setInterval(triggerDisbursement, 15 * 1000);
