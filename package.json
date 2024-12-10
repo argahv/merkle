@@ -9,7 +9,8 @@
     "dotenv": "^16.4.7",
     "ethers": "^6.13.4",
     "keccak256": "^1.0.6",
-    "merkletreejs": "^0.4.0"
+    "merkletreejs": "^0.4.0",
+    "viem": "^2.21.54"
   },
   "devDependencies": {
     "ts-node": "^10.0.0",

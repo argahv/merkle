@@ -15,22 +15,23 @@ const contract = new ethers.Contract(contractAddress, abi, wallet);
 async function updateMerkleRoot() {
   const newRoot = merkleTreeHandler.getRoot();
   try {
-    // const est = await contract.estimateGas(newRoot);
+    // Send the transaction to update the Merkle root
     const tx = await contract.setMerkleRoot(newRoot);
     console.log(chalk.green(`Merkle root updated. TX: ${tx.hash}`));
-    const receipt = await tx.wait();
-    console.log(
-      chalk.greenBright(
-        "Transaction confirmed.",
-        JSON.stringify(receipt, null, 2)
-      )
-    );
 
-    // // Calculate transaction cost
-    // const gasUsed = BigNumberish.from(receipt.gasUsed);
-    // const gasPrice = ethers.BigNumber.from(tx.gasPrice);
-    // const transactionCost = gasUsed.mul(gasPrice);
-    // console.log(chalk.blue(`Transaction cost: ${formatEther(transactionCost)} ETH`));
+    // Wait for the transaction receipt
+    const receipt = await tx.wait();
+    console.log(chalk.greenBright("Transaction confirmed."));
+
+    // Ensure gasUsed and gasPrice are BigNumbers
+    // const gasUsed = ethers.BigNumber.from(receipt.gasUsed); // Convert gasUsed to BigNumber
+    // const gasPrice = tx.gasPrice || (await provider.getGasPrice()); // Get gas price (BigNumber)
+    // const transactionCost = gasUsed.mul(gasPrice); // Multiply gasUsed and gasPrice
+
+    // Log the transaction cost in ETH
+    // console.log(
+    //   chalk.blue(`Transaction cost: ${formatEther(transactionCost)} ETH`)
+    // );
   } catch (error) {
     console.error(chalk.red("Error updating Merkle root:", error));
   }
@@ -43,4 +44,5 @@ async function triggerDisbursement() {
   console.log("=".repeat(50));
 }
 
-setInterval(triggerDisbursement, 15 * 1000);
+//In the real world scnario, this will be triggered by some trigger mechanism; might be like water level in case of anticipation of flood
+setInterval(triggerDisbursement, 5 * 1000);
